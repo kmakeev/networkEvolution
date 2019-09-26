@@ -68,3 +68,29 @@ eval_result = classifier.evaluate(
 
 print('\nTest set accuracy: {accuracy:0.3f}\n'.format(**eval_result))
 
+# Generate predictions from the model
+expected = ['Setosa', 'Versicolor', 'Virginica']
+predict_x = {
+    'SepalLength': [5.1, 5.9, 6.9],
+    'SepalWidth': [3.3, 3.0, 3.1],
+    'PetalLength': [1.7, 4.2, 5.4],
+    'PetalWidth': [0.5, 1.5, 2.1],
+}
+
+
+def input_fn(features, batch_size=256):
+    """An input function for prediction."""
+    # Convert the inputs to a Dataset without labels.
+    return tf.data.Dataset.from_tensor_slices(dict(features)).batch(batch_size)
+
+
+predictions = classifier.predict(
+    input_fn=lambda: input_fn(predict_x))
+
+for pred_dict, expec in zip(predictions, expected):
+    class_id = pred_dict['class_ids'][0]
+    probability = pred_dict['probabilities'][class_id]
+
+    print('Prediction is "{}" ({:.1f}%), expected "{}"'.format(
+        SPECIES[class_id], 100 * probability, expec))
+
