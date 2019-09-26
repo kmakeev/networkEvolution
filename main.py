@@ -69,3 +69,4 @@ eval_result = classifier.evaluate(
     input_fn=lambda: input_fn(test, test_y, training=False))
 
 print('\nTest set accuracy: {accuracy:0.3f}\n'.format(**eval_result))
+
