@@ -3,59 +3,41 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 
-
 print("Tensorflow ver.- ", tf.__version__)
 print("TPandas ver.- ", pd.__version__)
 
-# CSV_COLUMN_NAMES = ['SepalLength', 'SepalWidth', 'PetalLength', 'PetalWidth', 'Species']
 FEATURES = ['sizeH', 'sizeV', 'position', 'toUp', 'toDown', 'toLeft', 'toRight']
-FEATURES = ['sizeH', 'sizeV', 'toUp1', 'toUp2', 'toUp3', 'toUp4', 'toUp5', 'toUp6', 'toUp7', 'toUp8', 'toUp9',]
 RESULT = ['up', 'down', 'left', 'right']
 
 # position = dict({'position': np.random.rand(1, 9)})
 # print(position)
 
-train = pd.DataFrame({
-    'sizeH': [3, ],
-    'sizeV': [3, ],
-     # 'position': [1, 2, 3, 4, 5, 6, 7, 0, 8],
-
-    'toUp1': [1, ],
-    'toUp2': [2, ],
-    'toUp3': [3, ],
-    'toUp4': [4, ],
-    'toUp5': [5, ],
-    'toUp6': [6, ],
-    'toUp7': [7, ],
-    'toUp8': [0, ],
-    'toUp9': [8, ],
-    #'toDown': [[1, 2, 3, 4, 5, 6, 7, -1, 8]],
-    #'toLeft': [[1, 2, 3, 4, 5, 6, 0, 7, 8]],
-    #'toRight': [[1, 2, 3, 4, 5, 6, 7, 8, 0]],
-
-})
-print(train)
-train_y = pd.Series([RESULT.index('right'), ]);
-
 
 def input_evaluation_set():
-    features = {'SepalLength': np.array([6.4, 5.0]),
-                'SepalWidth':  np.array([2.8, 2.3]),
-                'PetalLength': np.array([5.6, 3.3]),
-                'PetalWidth':  np.array([2.2, 1.0])}
-    labels = np.array([2, 1])
+    features = {
+        'sizeH': [3, ],
+        'sizeV': [3, ],
+        'position': [[1, 2, 3, 4, 5, 6, 7, 0, 8], ],
+        'toUp': [[1, 2, 3, 4, 5, 6, 7, 0, 8, ], ],
+        'toDown': [[1, 2, 3, 4, 5, 6, 7, -1, 8], ],
+        'toLeft': [[1, 2, 3, 4, 5, 6, 0, 7, 8], ],
+        'toRight': [[1, 2, 3, 4, 5, 6, 7, 8, 0], ],
+    }
+    labels = pd.Series([RESULT.index('right'), ])
+
     return features, labels
 
 
-def input_fn(features, labels):
+def input_fn(features, labels, batch_size=256):
     """An input function for training or evaluating"""
-    # print(features, labels)
     dataset = tf.data.Dataset.from_tensor_slices((dict(features), labels))
-    print(dataset)
-    return dataset.batch(10)
+    return dataset.batch(batch_size)
 
 
-
+def input_prediction_fn(features, batch_size=256):
+    #An input function for prediction.
+    # Convert the inputs to a Dataset without labels.
+    return tf.data.Dataset.from_tensor_slices(dict(features)).batch(batch_size)
 
 # train_path = tf.keras.utils.get_file(
 #  "iris_training.csv", "https://storage.googleapis.com/download.tensorflow.org/data/iris_training.csv")
@@ -85,15 +67,39 @@ classifier = tf.compat.v2.estimator.DNNClassifier(
     # Two hidden layers of 10 nodes each.
     hidden_units=[48, 8],
     # The model must choose between 3 classes.
-    n_classes=4)
+    n_classes=4,
+    model_dir='./output')
 
+train, train_y = input_evaluation_set()
 
 classifier.train(
     input_fn=lambda: input_fn(train, train_y),
     steps=10)
-print(classifier)
+# latest_checkpoint = classifier.latest_checkpoint
+# print(latest_checkpoint)
+variable_names = classifier.get_variable_names()
+for name in variable_names:
+    print(name, classifier.get_variable_value(name))
 
-# Train the Model.
+predict_x = {
+    'sizeH': [3, 3],
+    'sizeV': [3, 3],
+    'position': [[1, 2, 3, 4, 5, 6, 7, 0, 8], [1, 2, 3, 4, 5, 6, 0, 7, 8]],
+    'toUp': [[1, 2, 3, 4, 5, 6, 7, 0, 8, ], [1, 2, 3, 0, 5, 6, 4, 7, 8]],
+    'toDown': [[1, 2, 3, 4, 5, 6, 7, -1, 8], [1, 2, 3, 4, 5, 6, -1, 7, 8]],
+    'toLeft': [[1, 2, 3, 4, 5, 6, 0, 7, 8], [1, 2, 3, 4, 5, 6, -1, 7, 8]],
+    'toRight': [[1, 2, 3, 4, 5, 6, 7, 8, 0], [1, 2, 3, 4, 5, 6, 7, 0, 8]],
+}
+
+predictions = classifier.predict(
+    input_fn=lambda: input_prediction_fn(predict_x))
+
+for pred_dict, expec in zip(predictions, RESULT):
+    class_id = pred_dict['class_ids'][0]
+    probability = pred_dict['probabilities'][class_id]
+    print('Prediction is "{}" ({:.1f}%), expected "{}"'.format(
+        RESULT[class_id], 100 * probability, expec))
+
 
 """{
 
