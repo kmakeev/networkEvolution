@@ -7,6 +7,9 @@ import ast
 print("Tensorflow ver.- ", tf.__version__)
 print("TPandas ver.- ", pd.__version__)
 
+SIZE_H = 3
+SIZE_V = 3
+
 FEATURES = ['size_h', 'size_v', 'position', 'toUp', 'toDown', 'toLeft', 'toRight']
 RESULT = ['up', 'down', 'left', 'right']
 
@@ -91,14 +94,36 @@ print('\nTest set accuracy: {accuracy:0.3f}\n'.format(**eval_result))
 # for name in variable_names:
 #    print(name, classifier.get_variable_value(name))
 
+"""    
+#puzzle(3,3)
+#puzzle.generate()
+position = [1, 3, 8, 5, 7, 2, 6, 4, 0] # puzzle.puzzle
+maps = []
+while True:
+    maps.append(position)
+    all_position = [[],[],[],[],]  #puzzle.get_all_pos
+    predict = {'size_h': [SIZE_H,], 'size_v':[SIZE_V,], 'position': [position,], 'toUp': [all_position[0],], 'toDown': [all_position[1],],
+    'toLeft': [all_position[2],], 'toRight': [all_position[2],]}
+    predictions = classifier.predict(
+        input_fn=lambda: input_prediction_fn(predict))
+    for pred_dict, expec in predictions:
+        class_id = pred_dict['class_ids'][0]
+        break
+    position = all_position[class_id]
+    if position == puzzle.goal:
+        break    
+    puzzle.set(position)
+"""
+
+
 predict_x = {
-    'size_h': [3, 3, 3, 3],
-    'size_v': [3, 3, 3, 3],
-    'position': [[1, 3, 8, 5, 7, 2, 6, 4, 0], [1, 3, 8, 5, 7, 2, 6, 0, 4], [1, 2, 3, 7, 4, 6, 5, 0, 8], [1, 3, 8, 5, 7, 2, 0, 6, 4]],
-    'toUp': [[1, 3, 8, 5, 7, 0, 6, 4, 2], [1, 3, 8, 5, 0, 2, 6, 7, 4], [1, 2, 3, 7, 0, 6, 5, 4, 8], [1, 3, 8, 0, 7, 2, 5, 6, 4]],
-    'toDown': [[1, 3, 8, 5, 7, 2, 6, 4, -1], [1, 3, 8, 5, 7, 2, 6, -1, 4], [1, 2, 3, 7, 4, 6, 5, -1, 8], [1, 3, 8, 5, 7, 2, -1, 6, 4]],
-    'toLeft': [[1, 3, 8, 5, 7, 2, 6, 0, 4], [1, 3, 8, 5, 7, 2, 0, 6, 4], [1, 2, 3, 7, 4, 6, 0, 5, 8], [1, 3, 8, 5, 7, 2, -1, 6, 4]],
-    'toRight': [[1, 3, 8, 5, 7, 2, 6, 4, -1], [1, 3, 8, 5, 7, 2, 6, 4, 0], [1, 2, 3, 7, 4, 6, 5, 8, 0],	[1, 3, 8, 5, 7, 2, 6, 0, 4]],
+    'size_h': [3, 3, 3, 3, ],
+    'size_v': [3, 3, 3, 3, ],
+    'position': [[1, 3, 8, 5, 7, 2, 6, 4, 0], [1, 3, 8, 5, 7, 2, 6, 0, 4], [1, 2, 3, 7, 4, 6, 5, 0, 8],  [1, 2, 3, 4, 5, 0, 7, 8, 6],],
+    'toUp': [[1, 3, 8, 5, 7, 0, 6, 4, 2], [1, 3, 8, 5, 0, 2, 6, 7, 4], [1, 2, 3, 7, 0, 6, 5, 4, 8], [1, 2, 0, 4, 5, 3, 7, 8, 6],],
+    'toDown': [[1, 3, 8, 5, 7, 2, 6, 4, -1], [1, 3, 8, 5, 7, 2, 6, -1, 4], [1, 2, 3, 7, 4, 6, 5, -1, 8], [1, 2, 3, 4, 5, 6, 7, 8, 0],],
+    'toLeft': [[1, 3, 8, 5, 7, 2, 6, 0, 4], [1, 3, 8, 5, 7, 2, 0, 6, 4], [1, 2, 3, 7, 4, 6, 0, 5, 8],  [1, 2, 3, 4, 0, 5, 7, 8, 6],],
+    'toRight': [[1, 3, 8, 5, 7, 2, 6, 4, -1], [1, 3, 8, 5, 7, 2, 6, 4, 0], [1, 2, 3, 7, 4, 6, 5, 8, 0],	[1, 2, 3, 4, 5, -1, 7, 8, 6],],
 }
 
 predictions = classifier.predict(
