@@ -103,6 +103,9 @@ maps = []
 while True:
     maps.append(position)
     all_position = pz.search_all_sets(position)
+    if len(all_position) != 4:
+        print("FAIL GET ALL POSITION!!!!")
+        break
     predict = {'size_h': [SIZE_H,], 'size_v':[SIZE_V,], 'position': [position,], 'toUp': [all_position[0],], 'toDown': [all_position[1],],
     'toLeft': [all_position[2],], 'toRight': [all_position[2],]}
     predictions = classifier.predict(
@@ -116,6 +119,9 @@ while True:
         print("FINISH: %s" % position)
         break    
     print("To   position - %s" % position)
+    if -1 in position:
+        print("FAIL!!!!")
+        break
 
 
 """ 
