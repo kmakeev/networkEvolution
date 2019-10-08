@@ -3,6 +3,7 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import ast
+import puzzlelib
 
 print("Tensorflow ver.- ", tf.__version__)
 print("TPandas ver.- ", pd.__version__)
@@ -94,28 +95,30 @@ print('\nTest set accuracy: {accuracy:0.3f}\n'.format(**eval_result))
 # for name in variable_names:
 #    print(name, classifier.get_variable_value(name))
 
-"""    
-#puzzle(3,3)
-#puzzle.generate()
-position = [1, 3, 8, 5, 7, 2, 6, 4, 0] # puzzle.puzzle
+
+pz = puzzlelib.Puzzle(SIZE_H, SIZE_V)
+pz.generate()
+position = pz.puzzle
 maps = []
 while True:
     maps.append(position)
-    all_position = [[],[],[],[],]  #puzzle.get_all_pos
+    all_position = pz.search_all_sets(position)
     predict = {'size_h': [SIZE_H,], 'size_v':[SIZE_V,], 'position': [position,], 'toUp': [all_position[0],], 'toDown': [all_position[1],],
     'toLeft': [all_position[2],], 'toRight': [all_position[2],]}
     predictions = classifier.predict(
         input_fn=lambda: input_prediction_fn(predict))
-    for pred_dict, expec in predictions:
+    for pred_dict in predictions:
         class_id = pred_dict['class_ids'][0]
         break
+    print("From position - %s" % position)
     position = all_position[class_id]
-    if position == puzzle.goal:
+    if position == pz.goal:
+        print("FINISH: %s" % position)
         break    
-    puzzle.set(position)
-"""
+    print("To   position - %s" % position)
 
 
+""" 
 predict_x = {
     'size_h': [3, 3, 3, 3, ],
     'size_v': [3, 3, 3, 3, ],
@@ -134,4 +137,6 @@ for pred_dict, expec in zip(predictions, RESULT):
     probability = pred_dict['probabilities'][class_id]
     print('Prediction is "{}" ({:.1f}%), expected "{}"'.format(
         RESULT[class_id], 100 * probability, expec))
+"""
+
 

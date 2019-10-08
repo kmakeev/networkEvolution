@@ -1,0 +1,29 @@
+[package]
+name = "puzzlelib"
+version = "0.1.0"
+authors = ["makeev_kp <kmakeev@arbitr.ru>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rand = "0.3.0"
+rayon = "1.1"
+csv = "1"
+serde = "1"
+serde_derive = "1"
+
+[dependencies.pyo3]
+version = "0.8.1"
+features = ["extension-module"]
+
+[profile.dev]
+debug = true
+opt-level = 0
+
+[profile.release]
+opt-level = 3
+
+[lib]
+name = "puzzle_lib"
+crate-type = ["cdylib"]

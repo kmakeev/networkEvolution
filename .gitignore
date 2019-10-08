@@ -1,0 +1,5 @@
+/puzzlelib/target/
+/puzzlelib/build/
+/puzzlelib/dist/
+/puzzlelib/puzzlelib.egg-info/
+/output/
