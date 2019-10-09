@@ -11,10 +11,13 @@ print("TPandas ver.- ", pd.__version__)
 SIZE_H = 3
 SIZE_V = 3
 
-FEATURES = ['size_h', 'size_v', 'position', 'toUp', 'toDown', 'toLeft', 'toRight']
+DO_NOT_TRAINING = False
+
+#FEATURES = ['size_h', 'size_v', 'position', 'toUp', 'toDown', 'toLeft', 'toRight']
+FEATURES = ['size_h', 'size_v', 'position',]
 RESULT = ['up', 'down', 'left', 'right']
 
-TRAIN_FILE = './train.csv'
+TRAIN_FILE = './train2.csv'
 TEST_FILE = './evaluation.csv'
 
 # position = dict({'position': np.random.rand(1, 9)})
@@ -39,23 +42,24 @@ def input_from_set():
 def input_from_file(file):
 
     df = pd.read_csv(file)
+
     # print(df.head())
     # print(df.dtypes)
     df['position'] = df['position'].apply(lambda s: ast.literal_eval(s))
-    df['toUp'] = df['toUp'].apply(lambda s: ast.literal_eval(s))
-    df['toDown'] = df['toDown'].apply(lambda s: ast.literal_eval(s))
-    df['toLeft'] = df['toLeft'].apply(lambda s: ast.literal_eval(s))
-    df['toRight'] = df['toRight'].apply(lambda s: ast.literal_eval(s))
+    # df['toUp'] = df['toUp'].apply(lambda s: ast.literal_eval(s))
+    # df['toDown'] = df['toDown'].apply(lambda s: ast.literal_eval(s))
+    # df['toLeft'] = df['toLeft'].apply(lambda s: ast.literal_eval(s))
+    # df['toRight'] = df['toRight'].apply(lambda s: ast.literal_eval(s))
 
     labels = df.pop('result')
     return df.to_dict('list'), labels
 
 
-def input_fn(features, labels, training=True, batch_size=512):
+def input_fn(features, labels, training=True, batch_size=2048):
     """An input function for training or evaluating"""
     dataset = tf.data.Dataset.from_tensor_slices((dict(features), labels))
     if training:
-        dataset = dataset.shuffle(1000).repeat()
+        dataset = dataset.shuffle(2).repeat()
     return dataset.batch(batch_size)
 
 
@@ -78,15 +82,18 @@ classifier = tf.compat.v2.estimator.DNNClassifier(
     n_classes=4,
     model_dir='./output')
 # train, train_y = input_from_set()
-train, train_y = input_from_file(TRAIN_FILE)
+
 test, test_y = input_from_file(TEST_FILE)
 
-classifier.train(
-    input_fn=lambda: input_fn(train, train_y),
-    steps=30000)
+if not DO_NOT_TRAINING:
+    train, train_y = input_from_file(TRAIN_FILE)
+    classifier.train(
+        input_fn=lambda: input_fn(train, train_y),
+        steps=100000)
 
 eval_result = classifier.evaluate(
-                input_fn=lambda: input_fn(train, train_y, training=False))
+                input_fn=lambda: input_fn(test, test_y, training=False))
+
 print('\nTest set accuracy: {accuracy:0.3f}\n'.format(**eval_result))
 
 # latest_checkpoint = classifier.latest_checkpoint
@@ -106,19 +113,25 @@ while True:
     if len(all_position) != 4:
         print("FAIL GET ALL POSITION!!!!")
         break
-    predict = {'size_h': [SIZE_H,], 'size_v':[SIZE_V,], 'position': [position,], 'toUp': [all_position[0],], 'toDown': [all_position[1],],
-    'toLeft': [all_position[2],], 'toRight': [all_position[2],]}
+    # predict = {'size_h': [SIZE_H,], 'size_v':[SIZE_V,], 'position': [position,], 'toUp': [all_position[0],], 'toDown': [all_position[1],],
+    # 'toLeft': [all_position[2],], 'toRight': [all_position[2],]}
+    predict = {'size_h': [SIZE_H,], 'size_v':[SIZE_V,], 'position': [position,],}
     predictions = classifier.predict(
         input_fn=lambda: input_prediction_fn(predict))
+
     for pred_dict in predictions:
         class_id = pred_dict['class_ids'][0]
-        break
+        probability = pred_dict['probabilities'][class_id]
+
     print("From position - %s" % position)
     position = all_position[class_id]
     if position == pz.goal:
         print("FINISH: %s" % position)
-        break    
-    print("To   position - %s" % position)
+        break
+    print("To   position - %s, probality - %s " % (position, probability))
+    if len(maps) > 2 and position == maps[-2]:
+        print("FAIL!!!! infinity!")
+        break
     if -1 in position:
         print("FAIL!!!!")
         break
