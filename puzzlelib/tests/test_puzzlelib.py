@@ -9,6 +9,7 @@ class TestPuzzlelib:
         assert(pz.size_h == 3 and pz.size_v == 3)
         assert(len(pz.start) == 9)
         assert(len(pz.goal) == 9)
+        # default for wrong sizes
         pz = Puzzle(0, 3)
         assert (pz.size_h == 4 and pz.size_v == 4)
         pz = Puzzle(4, 11)
