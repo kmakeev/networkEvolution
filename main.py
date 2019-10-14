@@ -14,7 +14,7 @@ SIZE_V = 3
 DO_NOT_TRAINING = True
 
 #FEATURES = ['size_h', 'size_v', 'position', 'toUp', 'toDown', 'toLeft', 'toRight']
-FEATURES = ['size_h', 'size_v', 'position',]
+FEATURES = ['size_h', 'size_v', 'position', 'states']
 RESULT = ['up', 'down', 'left', 'right']
 
 TRAIN_FILE = './train.csv'
@@ -24,11 +24,12 @@ TEST_FILE = './evaluation.csv'
 # print(position)
 
 
-def input_from_set(size_h, size_v, position, labels):
+def input_from_set(size_h, size_v, position, states, labels):
     features = {
         'size_h': [size_h, ],
         'size_v': [size_v, ],
         'position': [position, ],
+        'states': [states, ],
     }
     labels = [labels,]
 
@@ -42,7 +43,8 @@ def input_from_file(file):
     # print(df.head())
     # print(df.dtypes)
     df['position'] = df['position'].apply(lambda s: ast.literal_eval(s))
-    df['position'] = df['position'].apply(lambda s: [float(x/10) for x in s])
+    # df['position'] = df['position'].apply(lambda s: [float(x/10) for x in s])
+    df['states'] = df['states'].apply(lambda s: ast.literal_eval(s))
     # df['toUp'] = df['toUp'].apply(lambda s: ast.literal_eval(s))
     # df['toDown'] = df['toDown'].apply(lambda s: ast.literal_eval(s))
     # df['toLeft'] = df['toLeft'].apply(lambda s: ast.literal_eval(s))
@@ -68,14 +70,13 @@ def input_prediction_fn(features, batch_size=1):
 my_feature_columns = []
 
 for int_key in FEATURES[0:2]:
-    my_feature_columns.append(tf.feature_column.numeric_column(key=int_key, shape=[1,]))
-for emb_key in FEATURES[2:]:
-    my_feature_columns.append(tf.feature_column.numeric_column(key=emb_key, shape=[1, 9]))
-
+    my_feature_columns.append(tf.feature_column.numeric_column(key=int_key, shape=[1, ]))
+my_feature_columns.append(tf.feature_column.numeric_column(key=FEATURES[2], shape=[9, 2]))
+my_feature_columns.append(tf.feature_column.numeric_column(key=FEATURES[3], shape=[1, 4]))
 
 classifier = tf.compat.v2.estimator.DNNClassifier(
     feature_columns=my_feature_columns,
-    hidden_units=[40, 4,],
+    hidden_units=[24, ],
     n_classes=4,
     model_dir='./output')
 # train, train_y = input_from_set()
@@ -86,7 +87,7 @@ if not DO_NOT_TRAINING:
     train, train_y = input_from_file(TRAIN_FILE)
     classifier.train(
         input_fn=lambda: input_fn(train, train_y),
-        steps=100000)
+        steps=10000)
 
 eval_result = classifier.evaluate(
                 input_fn=lambda: input_fn(test, test_y, training=False))
@@ -115,7 +116,7 @@ while True:
         break
     # predict = {'size_h': [SIZE_H,], 'size_v':[SIZE_V,], 'position': [position,], 'toUp': [all_position[0],], 'toDown': [all_position[1],],
     # 'toLeft': [all_position[2],], 'toRight': [all_position[2],]}
-    predict = {'size_h': [SIZE_H,], 'size_v':[SIZE_V,], 'position': [position,],}
+    predict = {'size_h': [SIZE_H,], 'size_v':[SIZE_V,], 'position': [[[point.h, point.v] for point in pz.get_points(position)],], 'states': [pz.get_states(position),]}
     predictions = classifier.predict(
         input_fn=lambda: input_prediction_fn(predict))
 
@@ -157,11 +158,11 @@ while True:
                 err = "ERROR to APPLY Classes in search result %s %s " % (set, all_sets)
                 raise err
             print('\nTraining to - %s \n' % all_sets[classes])
-            train, train_y = input_from_set(SIZE_H, SIZE_V, maps[-1], classes)
+            train, train_y = input_from_set(SIZE_H, SIZE_V, [[[point.h, point.v] for point in pz.get_points(maps[-1])],], pz.get_states(maps[-1]), classes)
             classifier.train(
                 input_fn=lambda: input_fn(train, train_y),
-                steps=100)
-            test, test_y = input_from_set(SIZE_H, SIZE_V, maps[-1], classes)
+                steps=1000)
+            test, test_y = input_from_set(SIZE_H, SIZE_V, [[[point.h, point.v] for point in pz.get_points(maps[-1])],], pz.get_states(maps[-1]), classes)
             eval_result = classifier.evaluate(
                 input_fn=lambda: input_fn(test, test_y, training=False))
             print('\nTest set accuracy after training: {accuracy:0.3f}\n'.format(**eval_result))
@@ -188,11 +189,11 @@ while True:
                 err = "ERROR to APPLY Classes in search result %s %s " % (set, all_sets)
                 raise err
             print('\nTraining to - %s \n' % all_sets[classes])
-            train, train_y = input_from_set(SIZE_H, SIZE_V, maps[-2], classes)
+            train, train_y = input_from_set(SIZE_H, SIZE_V, [[point.h, point.v] for point in pz.get_points(maps[-2])], pz.get_states(maps[-2]), classes)
             classifier.train(
                 input_fn=lambda: input_fn(train, train_y),
-                steps=100)
-            test, test_y = input_from_set(SIZE_H, SIZE_V, maps[-2], classes)
+                steps=1000)
+            test, test_y = input_from_set(SIZE_H, SIZE_V, [[point.h, point.v] for point in pz.get_points(maps[-2])], pz.get_states(maps[-2]), classes)
             eval_result = classifier.evaluate(
                 input_fn=lambda: input_fn(test, test_y, training=False))
             print('\nTest set accuracy after training: {accuracy:0.3f}\n'.format(**eval_result))

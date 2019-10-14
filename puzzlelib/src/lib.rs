@@ -16,8 +16,12 @@ use std::time::{SystemTime, Duration};
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 
+
+#[pyclass(module = "puzzle_lib")]
 pub struct Point {
+    #[pyo3(get)]
     pub h: i8,
+    #[pyo3(get)]
     pub v: i8,
 }
 
@@ -152,6 +156,47 @@ impl Puzzle {
         }
         self.puzzle.push(0);
         self.start = self.puzzle.clone();
+    }
+
+    pub fn get_points(& mut self, puz:Vec<i8>) -> PyResult<Vec<Point>> {
+        let mut points =  vec![];
+        for _i in 0..self.size_h*self.size_v {
+            points.push(Point{h:0, v:0})
+        }
+        for (c, i) in puz.iter().enumerate() {
+            if *i != 0 {
+                points[(*i-1) as usize] = Point{h:c as i8/ self.size_h, v:c as i8 % self.size_h};
+            } else {
+                points[(self.size_h*self.size_v - 1) as usize] = Point{h:c as i8 / self.size_h, v:c as i8 % self.size_h};
+            }
+        }
+        Ok(points)
+    }
+
+    pub fn get_states(& mut self, puz:Vec<i8>) -> PyResult<Vec<i8>> {
+        let mut tmp: Vec < i8 > = vec![0, 0, 0, 0];
+        if puz.len() != usize::try_from(self.size_h * self.size_v).unwrap() {
+            Ok(tmp)
+        } else {
+            let pos_opt: Option < usize >;
+            pos_opt = puz.iter().position( | &r | r == 0);
+            if pos_opt != None {
+                let mut pos = pos_opt.unwrap() as i8;
+                if pos / self.size_h > 0 {
+                    tmp[0] = 1;
+                }
+                if (pos + self.size_h) < (self.size_v * self.size_h) {
+                    tmp[1] = 1;
+                }
+                if pos % self.size_v > 0 {
+                    tmp[2] = 1;
+                }
+                if (pos % self.size_h) < (self.size_h - 1) {
+                    tmp[3] = 1;
+                }
+            }
+            Ok(tmp)
+        }
     }
 
     fn set_puzzle(& mut self, puz:Vec<i8>) -> PyResult<bool> {
@@ -481,6 +526,6 @@ fn puzzlelib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     //m.add_class::<Set>()?;
     //m.add_class::<Step>()?;
     m.add_class::<Puzzle>()?;
-
+    m.add_class::<Point>()?;
     Ok(())
 }
