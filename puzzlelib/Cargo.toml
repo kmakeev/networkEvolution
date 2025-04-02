@@ -14,7 +14,7 @@ serde = "1"
 serde_derive = "1"
 
 [dependencies.pyo3]
-version = "0.8.1"
+version = "0.24.1"
 features = ["extension-module"]
 
 [profile.dev]
